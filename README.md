@@ -5,3 +5,4 @@
 - [x] Kmeans clustering
 - [ ] Kmeans++ clustering
 - [ ] DBSCAN (most likely to yield reasonable results)
+- [ ] OPTICS
