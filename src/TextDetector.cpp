@@ -3,9 +3,11 @@
 #include "opencv2/features2d/features2d.hpp"
 #include <iostream>
 #include <cmath>
+#include "clustering/src/cluster/optics.hpp"
 #include <map>
 
 using namespace std;
+using namespace cluster_analysis;
 
 pair<cv::Rect*, cv::Rect> rectPair(cv::Rect* r1_ptr, cv::Rect r2);
 cv::Rect* nearestMean(cv::Rect to, vector <cv::Rect> &means, double &error);
@@ -55,6 +57,7 @@ void clusterToLinesWithKmeans(vector<cv::Rect> &boxes,
                               int k,
                               double &error)
 {
+
     vector <cv::Rect> means;
     multimap <cv::Rect*, cv::Rect> clusters;
 
@@ -164,6 +167,10 @@ void groupOverlaps(vector<cv::Rect> &boxes,
 int main(int argc, char *argv[])
 {
 
+    const double connectivityRadius = 50;
+    const size_t minNeighbours = 1;
+    optics opticObj = optics(connectivityRadius, minNeighbours);
+
     // the regions vector passed to detectRegions is the set of points/pixels
     // that belong to a maximally stable extremal region, we don't need it
     vector<vector<cv::Point> > regions;
@@ -172,24 +179,16 @@ int main(int argc, char *argv[])
     cv::Ptr<cv::MSER> ms = cv::MSER::create();
     double error = DBL_MAX;
     double minError = DBL_MAX;
+    const double connectivityRadius = 50;
+    const size_t minNeighbours = 1;
+    optics opticObj = optics(connectivityRadius, minNeighbours);
 
     // default is 60, smaller means high recall low percision
     ms->setMinArea(15);
     ms->detectRegions(img, regions, boxes);
     groupOverlaps(boxes, reducedBoxes);
 
-    for (int k = 3; k < 20; k++){
-        for (int i = 0; i < 50; i++){
-            clusterToLinesWithKmeans(reducedBoxes, lineBoxes, k, error);
-            if (error <= minError){
-                bestLines = lineBoxes;
-                minError = error;
-                printf("Error reduced to %f\n", error);
-            }
-        }
-    }
 
-    groupOverlaps(bestLines, reducedLines);
 
     printf("MSER box count is %i\n", int(boxes.size()));
     printf("After special kmeans, we have %i lines\n", int(reducedLines.size()));
