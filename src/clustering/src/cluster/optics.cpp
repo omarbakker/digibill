@@ -33,7 +33,7 @@ optics_descriptor::optics_descriptor(const std::size_t p_index, const double p_c
     m_index(p_index),
     m_core_distance(p_core_distance),
     m_reachability_distance(p_reachability_distance),
-    m_processed(false) 
+    m_processed(false)
 { }
 
 
@@ -47,13 +47,13 @@ void optics_descriptor::clear(void) {
 const double optics::NONE_DISTANCE = std::numeric_limits<double>::max();
 
 
-optics::optics(const double p_radius, const std::size_t p_neighbors) : optics() { 
+optics::optics(const double p_radius, const std::size_t p_neighbors) : optics() {
     m_radius = p_radius;
     m_neighbors = p_neighbors;
 }
 
 
-optics::optics(const double p_radius, const std::size_t p_neighbors, const std::size_t p_amount_clusters) : optics() { 
+optics::optics(const double p_radius, const std::size_t p_neighbors, const std::size_t p_amount_clusters) : optics() {
     m_radius = p_radius;
     m_neighbors = p_neighbors;
     m_amount_clusters = p_amount_clusters;
@@ -96,7 +96,9 @@ void optics::initialize(void) {
     if (m_optics_objects.empty()) {
         m_optics_objects.reserve(m_data_ptr->size());
 
+        printf("Size is %d\n", m_data_ptr->size());
         for (std::size_t i = 0; i < m_data_ptr->size(); i++) {
+            printf("Helloooooo\n");
             m_optics_objects.emplace_back(i, optics::NONE_DISTANCE, optics::NONE_DISTANCE);
         }
     }

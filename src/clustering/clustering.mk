@@ -1,19 +1,12 @@
 # Tools
-CC = g++ -c
-LD = g++
+CC = g++ -c -g
+LD = g++ -g
 RM = rm -rf
 MKDIR = mkdir -p
 
-
-# C++ standard depending on operating system
-ifeq ($(shell uname -o), Cygwin)
-	CPLUS_STANDARD = gnu++1y
-	CFLAG_PIC =
-else
-	CPLUS_STANDARD = c++1y
-	CFLAG_PIC = -fPIC
-endif
-
+CPLUS_STANDARD = c++1y
+CFLAG_PIC = -fPIC
+cwd = $(shell pwd)
 
 # Target flag depending on platform
 ifeq ($(PLATFORM), x86)
@@ -24,21 +17,19 @@ else
 	LFLAG_PLATFORM = -m64
 endif
 
-
 # Toolchain arguments.
-CFLAGS = -O2 -MMD -MP -std=$(CPLUS_STANDARD) $(CFLAG_PIC) $(CFLAG_PLATFORM) -Wall -Wpedantic
+# CFLAGS = -O2 -MMD -MP -std=$(CPLUS_STANDARD) $(CFLAG_PIC) $(CFLAG_PLATFORM) -Wall -Wpedantic
+CFLAGS = -MMD -MP -std=$(CPLUS_STANDARD) $(CFLAG_PIC) $(CFLAG_PLATFORM) -Wall -Wpedantic
 LFLAGS = -shared $(LFLAG_PLATFORM)
 
-
 # Executable library file
-EXECUTABLE_DIRECTORY = core/$(PLATFORM)/linux
+EXECUTABLE_DIRECTORY = $(cwd)/core/$(PLATFORM)/
 EXECUTABLE = $(EXECUTABLE_DIRECTORY)/ccore.so
 
-
 # Project sources
-MODULES = . cluster container differential parallel tsp
+MODULES = . cluster container differential parallel
 
-SOURCES_DIRECTORY = src
+SOURCES_DIRECTORY = $(cwd)/src
 SOURCES_DIRECTORIES = $(addprefix $(SOURCES_DIRECTORY)/, $(MODULES))
 SOURCES = $(foreach SUBDIR, $(SOURCES_DIRECTORIES), $(wildcard $(SUBDIR)/*.cpp))
 
@@ -46,7 +37,7 @@ INCLUDES = -I$(SOURCES_DIRECTORY)
 
 
 # Project objects
-OBJECTS_DIRECTORY = obj/ccore/$(PLATFORM)
+OBJECTS_DIRECTORY = $(cwd)/obj/ccore/$(PLATFORM)
 OBJECTS_DIRECTORIES = $(addprefix $(OBJECTS_DIRECTORY)/, $(MODULES)) $(EXECUTABLE_DIRECTORY)
 OBJECTS = $(patsubst $(SOURCES_DIRECTORY)/%.cpp, $(OBJECTS_DIRECTORY)/%.o, $(SOURCES))
 

@@ -8,27 +8,41 @@
 
 using namespace std;
 using namespace cluster_analysis;
+using Point = cv::Point;
+using Rect = cv::Rect;
+using Rects = std::vector<Rect>;
+using Points = std::vector<Point>;
 
-pair<cv::Rect*, cv::Rect> rectPair(cv::Rect* r1_ptr, cv::Rect r2);
-cv::Rect* nearestMean(cv::Rect to, vector <cv::Rect> &means, double &error);
-double distanceBetween(cv::Rect r1, cv::Rect r2);
-int getRandomRect(vector<cv::Rect> &rects);
-void clusterToLinesWithKmeans(vector<cv::Rect> &boxes, vector<cv::Rect> lines, double &error);
-void groupOverlaps(vector<cv::Rect> &boxes, vector<cv::Rect> &reducedBoxes);
+void getPointsFromRectsVector(Rects &rects, vector<point> &points);
+pair<Rect*, Rect> rectPair(Rect* r1_ptr, Rect r2);
+Rect* nearestMean(Rect to, vector <Rect> &means, double &error);
+double distanceBetween(Rect r1, Rect r2);
+int getRandomRect(Rects &rects);
+void clusterToLinesWithKmeans(Rects &boxes, Rects lines, double &error);
+void groupOverlaps(Rects &boxes, Rects &reducedBoxes);
 
-pair<cv::Rect*, cv::Rect> rectPair(cv::Rect* r1_ptr, cv::Rect r2)
+void getPointsFromRectsVector(Rects &rects,
+                              vector<vector<double>> &points)
 {
-    return pair<cv::Rect*, cv::Rect>(r1_ptr, r2);
+    points.clear();
+    for (int i = 0; i < rects.size(); i++){
+        vector<double> pt {(double) rects[i].x, (double)rects[i].y};
+        points.push_back(pt);
+    }
 }
 
+pair<Rect*, Rect> rectPair(Rect* r1_ptr, Rect r2)
+{
+    return pair<Rect*, Rect>(r1_ptr, r2);
+}
 
-cv::Rect* nearestMean(cv::Rect to,
-                     vector <cv::Rect> &means,
+Rect* nearestMean(Rect to,
+                     vector <Rect> &means,
                      double &error)
 {
-    cv::Rect* nearest;
+    Rect* nearest;
     double nearestDist = DBL_MAX;
-    for (cv::Rect& mean:means){
+    for (Rect& mean:means){
         double dist = distanceBetween(mean, to);
         if (dist < nearestDist){
             nearestDist = dist;
@@ -39,31 +53,31 @@ cv::Rect* nearestMean(cv::Rect to,
     return nearest;
 }
 
-double distanceBetween(cv::Rect r1, cv::Rect r2)
+double distanceBetween(Rect r1, Rect r2)
 {
     float x = sqrt(abs(r1.x - r2.x) + pow(r1.y - r2.y, 8));
     return x;
 }
 
 // todo: improve this to implement kmeans++
-int getRandomRect(vector<cv::Rect> &rects)
+int getRandomRect(Rects &rects)
 {
     int randomIndex = rand() % rects.size();
     return randomIndex;
 }
 
-void clusterToLinesWithKmeans(vector<cv::Rect> &boxes,
-                              vector<cv::Rect> &lines,
+void clusterToLinesWithKmeans(Rects &boxes,
+                              Rects &lines,
                               int k,
                               double &error)
 {
 
-    vector <cv::Rect> means;
-    multimap <cv::Rect*, cv::Rect> clusters;
+    vector <Rect> means;
+    multimap <Rect*, Rect> clusters;
 
     // initialize means as random rects from boxes
     for (int i = 0; i < k; i++){
-        cv::Rect mean = boxes[getRandomRect(boxes)];
+        Rect mean = boxes[getRandomRect(boxes)];
         means.push_back(mean);
     }
 
@@ -79,16 +93,16 @@ void clusterToLinesWithKmeans(vector<cv::Rect> &boxes,
         clusters.clear();
 
         // assign each rect to the cluster with the nearest mean
-        for (cv::Rect box:boxes){
+        for (Rect box:boxes){
             double err;
-            cv::Rect *mean = nearestMean(box, means, err);
+            Rect *mean = nearestMean(box, means, err);
             clusters.insert( rectPair(mean, box));
             currentError += err;
         }
 
         // recalculate the means
         for (int i = 0; i < means.size(); i++){
-            cv::Rect* mean = &means[i];
+            Rect* mean = &means[i];
             double meanx = 0;
             double meany = 0;
             for(auto it = clusters.begin(); it != clusters.end(); it++){
@@ -100,7 +114,7 @@ void clusterToLinesWithKmeans(vector<cv::Rect> &boxes,
             }
             meanx = meanx/clusters.count(mean);
             meany = meany/clusters.count(mean);
-            means[i] = cv::Rect(meanx, meany, 0, 0);
+            means[i] = Rect(meanx, meany, 0, 0);
         }
 
         if (currentError > 0.995 * prevError) {
@@ -119,8 +133,8 @@ void clusterToLinesWithKmeans(vector<cv::Rect> &boxes,
     // create the lines
     lines.clear();
     for (int i = 0; i < means.size(); i++){
-        cv::Rect mean = means[i];
-        cv::Rect unionRect = cv::Rect(0,0,0,0);
+        Rect mean = means[i];
+        Rect unionRect = Rect(0,0,0,0);
         for(auto it = clusters.begin(); it != clusters.end(); it++){
             if (mean == *(it->first)){
                 if (unionRect.area() == 0) unionRect = it->second;
@@ -138,11 +152,10 @@ represent the overlapping regions in the original vector. So if 3 boxes overlapp
 in the original vector, they would be found as one entry (the union of the 3)
  in the output vector
 */
-void groupOverlaps(vector<cv::Rect> &boxes,
-                   vector<cv::Rect> &reducedBoxes)
+void groupOverlaps(Rects &boxes,
+                   Rects &reducedBoxes)
 {
-
-    // create an array to keep track of whether a cv::Rect was already grouped
+    // create an array to keep track of whether a Rect was already grouped
     int n = boxes.size();
     bool grouped[n];
     for (int i = 0; i < n; i++) grouped[i] = false;
@@ -150,7 +163,7 @@ void groupOverlaps(vector<cv::Rect> &boxes,
     for (int i = 0; i < n; i++)
         if (grouped[i] == false){
             grouped[i] = true;
-            cv::Rect grouping = boxes[i];
+            Rect grouping = boxes[i];
             for (int j = i+1; j < n; j++){
                 bool intersects = (boxes[i] & boxes[j]).area() > 0;
                 if (intersects){
@@ -160,42 +173,37 @@ void groupOverlaps(vector<cv::Rect> &boxes,
             }
             reducedBoxes.push_back(grouping);
         }
-
 }
 
 
 int main(int argc, char *argv[])
 {
-
-    const double connectivityRadius = 50;
-    const size_t minNeighbours = 1;
-    optics opticObj = optics(connectivityRadius, minNeighbours);
-
     // the regions vector passed to detectRegions is the set of points/pixels
     // that belong to a maximally stable extremal region, we don't need it
-    vector<vector<cv::Point> > regions;
-    vector<cv::Rect> boxes, reducedBoxes, lineBoxes, bestLines, reducedLines;
+    vector<Points > regions;
+    Rects boxes, reducedBoxes;
     cv::Mat img = cv::imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
     cv::Ptr<cv::MSER> ms = cv::MSER::create();
     double error = DBL_MAX;
     double minError = DBL_MAX;
-    const double connectivityRadius = 50;
-    const size_t minNeighbours = 1;
-    optics opticObj = optics(connectivityRadius, minNeighbours);
 
     // default is 60, smaller means high recall low percision
     ms->setMinArea(15);
     ms->detectRegions(img, regions, boxes);
     groupOverlaps(boxes, reducedBoxes);
 
-
+    const double connectivityRadius = 50;
+    const size_t minNeighbours = 1;
+    vector<vector<double>> opticsPts;
+    getPointsFromRectsVector(reducedBoxes, opticsPts);
+    cluster_data opticsClusters;
+    optics opticsObj = optics(connectivityRadius, minNeighbours);
+    opticsObj.process(opticsPts, opticsClusters);
 
     printf("MSER box count is %i\n", int(boxes.size()));
-    printf("After special kmeans, we have %i lines\n", int(reducedLines.size()));
 
-    for (int i = 0; i < reducedLines.size(); i++)
-    {
-        cv::rectangle(img, reducedLines[i], CV_RGB(0, 255, 0));
+    for (int i = 0; i < reducedBoxes.size(); i++) {
+        cv::rectangle(img, reducedBoxes[i], CV_RGB(0, 255, 0));
     }
 
     cv::imshow("mser", img);

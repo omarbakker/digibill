@@ -1,26 +1,32 @@
-obj/ccore/x64/cluster/optics.o: src/cluster/optics.cpp \
-  src/cluster/optics.hpp src/container/kdtree.hpp \
-  src/container/kdnode.hpp src/definitions.hpp \
-  src/cluster/cluster_algorithm.hpp src/cluster/cluster_data.hpp \
-  src/cluster/optics_data.hpp src/cluster/dbscan_data.hpp \
-  src/cluster/ordering_analyser.hpp src/utils.hpp
+/Users/OmarEyad/pythons/digibill/src/clustering/obj/ccore/x64/cluster/optics.o: \
+  /Users/OmarEyad/pythons/digibill/src/clustering/src/cluster/optics.cpp \
+  /Users/OmarEyad/pythons/digibill/src/clustering/src/cluster/optics.hpp \
+  /Users/OmarEyad/pythons/digibill/src/clustering/src/container/kdtree.hpp \
+  /Users/OmarEyad/pythons/digibill/src/clustering/src/container/kdnode.hpp \
+  /Users/OmarEyad/pythons/digibill/src/clustering/src/definitions.hpp \
+  /Users/OmarEyad/pythons/digibill/src/clustering/src/cluster/cluster_algorithm.hpp \
+  /Users/OmarEyad/pythons/digibill/src/clustering/src/cluster/cluster_data.hpp \
+  /Users/OmarEyad/pythons/digibill/src/clustering/src/cluster/optics_data.hpp \
+  /Users/OmarEyad/pythons/digibill/src/clustering/src/cluster/dbscan_data.hpp \
+  /Users/OmarEyad/pythons/digibill/src/clustering/src/cluster/ordering_analyser.hpp \
+  /Users/OmarEyad/pythons/digibill/src/clustering/src/utils.hpp
 
-src/cluster/optics.hpp:
+/Users/OmarEyad/pythons/digibill/src/clustering/src/cluster/optics.hpp:
 
-src/container/kdtree.hpp:
+/Users/OmarEyad/pythons/digibill/src/clustering/src/container/kdtree.hpp:
 
-src/container/kdnode.hpp:
+/Users/OmarEyad/pythons/digibill/src/clustering/src/container/kdnode.hpp:
 
-src/definitions.hpp:
+/Users/OmarEyad/pythons/digibill/src/clustering/src/definitions.hpp:
 
-src/cluster/cluster_algorithm.hpp:
+/Users/OmarEyad/pythons/digibill/src/clustering/src/cluster/cluster_algorithm.hpp:
 
-src/cluster/cluster_data.hpp:
+/Users/OmarEyad/pythons/digibill/src/clustering/src/cluster/cluster_data.hpp:
 
-src/cluster/optics_data.hpp:
+/Users/OmarEyad/pythons/digibill/src/clustering/src/cluster/optics_data.hpp:
 
-src/cluster/dbscan_data.hpp:
+/Users/OmarEyad/pythons/digibill/src/clustering/src/cluster/dbscan_data.hpp:
 
-src/cluster/ordering_analyser.hpp:
+/Users/OmarEyad/pythons/digibill/src/clustering/src/cluster/ordering_analyser.hpp:
 
-src/utils.hpp:
+/Users/OmarEyad/pythons/digibill/src/clustering/src/utils.hpp:

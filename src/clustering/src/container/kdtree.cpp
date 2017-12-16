@@ -19,10 +19,8 @@
 */
 
 #include "container/kdtree.hpp"
-
 #include <limits>
 #include <iostream>
-
 #include "utils.hpp"
 
 
