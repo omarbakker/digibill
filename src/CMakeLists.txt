@@ -5,6 +5,7 @@ find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 add_executable( TextDetector TextDetector.cpp )
 target_link_libraries( TextDetector ${OpenCV_LIBS} )
+set(CMAKE_BUILD_TYPE Debug)
 
 # cmake -DCMAKE_BUILD_TYPE=Debug . for debug
 # cmake . for release
