@@ -30,3 +30,4 @@
 * [Convert TF to Coreml](https://github.com/tf-coreml/tf-coreml)
 * [OpenCV](https://opencv.org/releases.html)
 * [Dropbox apply](https://www.dropbox.com/jobs/listing/794772)
+* [Dzone article](https://dzone.com/articles/using-ocr-for-receipt-recognition)
