@@ -10,6 +10,7 @@
 - [ ] Stopping criteria for hierarchical clustering
 - [ ] DBSCAN (most likely to yield reasonable results)
 - [ ] OPTICS
+- [ ] findCountours from openCV (see dzone article)
 
 ### Dataset Generation
 - [ ] Generate images of text
