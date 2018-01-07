@@ -10,6 +10,7 @@
 - [ ] Stopping criteria for hierarchical clustering
 - [ ] DBSCAN (most likely to yield reasonable results)
 - [ ] OPTICS
+- [ ] findCountours from openCV (see dzone article)
 
 ### Dataset Generation
 - [ ] Generate images of text
@@ -29,3 +30,5 @@
 * [Dropbox Article](https://blogs.dropbox.com/tech/2017/04/creating-a-modern-ocr-pipeline-using-computer-vision-and-deep-learning/)
 * [Convert TF to Coreml](https://github.com/tf-coreml/tf-coreml)
 * [OpenCV](https://opencv.org/releases.html)
+* [Dropbox apply](https://www.dropbox.com/jobs/listing/794772)
+* [Dzone article](https://dzone.com/articles/using-ocr-for-receipt-recognition)
