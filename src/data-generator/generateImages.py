@@ -1,41 +1,48 @@
 import cv2
 import numpy as np
-import random, os, sys
+import random, os, sys, shutil
 from PIL import ImageFont, ImageDraw, Image
+
+fixedWidth, fixedHeight = 280, 28
 
 fonts = ['fonts/' + font for font in os.listdir('fonts') if font[-3:] == 'ttf']
 
-if not os.path.exists('images'):
-    os.mkdir('images')
+if os.path.exists('images'):
+    shutil.rmtree('images')
+os.mkdir('images')
 
 corpus = open('processed-corpus.txt').readlines()
 labels = open('images/labels.txt','w')
 
 numberOfImages = int(sys.argv[1])
 
-def getRandomBlankNumpyImage():
-    '''
-    return a white image with random width, and a constant height of 50
-    '''
-    channels = 1
-    height = 28
-    width = int(50 + random.random() * 200)
-    img = np.ones((height, width, channels), dtype=np.uint8) * 255
-    return img
+def getRandomRotationAngle():
+    return int(np.random.normal(0,10))
 
-def getFizedSizeBlankPILImage():
-    height = 28
-    width = 320
+def getRandomBackgroundShade():
+    '''
+    random shade of gray as the bg, lighter shades have a higher probablility.
+    '''
+    return 255 - int(abs(np.random.normal(0,10)))
+
+def getFizedSizeBlankPILImage(shade=255):
+    '''
+    Return a blank PIL.Image object with the fixed size (to be used as input
+    for our network).
+    The fixed size is set at the top of this file
+    '''
     grayscaleKey = 'L'
-    white = 255
-    img = Image.new(grayscaleKey, size=(width, height), color=white)
+    img = Image.new(grayscaleKey, size=(fixedWidth, fixedHeight),\
+                                  color=shade)
     return img
 
-def getPilImageToFitLine(text, font):
+def getPilImageToFitLine(text, font, shade=255):
+    '''
+    Returns a PIL.Image object to exactly fit the 'text', using 'font'
+    '''
     width, height = font.getsize(text)
     grayscaleKey = 'L'
-    white = 255
-    img = Image.new(grayscaleKey, size=(width, height), color=white)
+    img = Image.new(grayscaleKey, size=(width, height), color=shade)
     return img
 
 def getRandomColor():
@@ -84,9 +91,16 @@ def getLabelFromProductDescription():
     return randomWord.rstrip()
 
 def generateRandomLineImage(i, product=None, font=None):
+    '''
+    Generate and save a randomized training image by sampling from different
+    fonts, colors and sizes of fonts, the final image will be scaled to a fixed
+    size set at the top of this document. the file iamges/labels.txt will
+    contain all the mappings between images and the text they contain
+    '''
     if product == None:
         product = getLabelFromProductDescription()
     fill = getRandomColor()
+    bgShade = getRandomBackgroundShade()
     position = (0,0)
     textReadable = False
     averageFontSize = 12
@@ -98,7 +112,7 @@ def generateRandomLineImage(i, product=None, font=None):
     if font == None:
         while not textReadable and trys < max_trys:
             font = getRandomFont(averageSize=averageFontSize)
-            img = getPilImageToFitLine(text = product, font = font)
+            img = getPilImageToFitLine(text=product, font=font)
             _, height = img.size
             if height >= 10:
                 textReadable = True
@@ -110,11 +124,17 @@ def generateRandomLineImage(i, product=None, font=None):
             generateRandomLineImage(i)
             return
 
-    img = getPilImageToFitLine(text = product, font = font)
+    # create and add text to an image
+    img = getPilImageToFitLine(text = product, font = font, shade = bgShade)
     context = ImageDraw.Draw(img)
     context.text(xy = position, text = product, font = font, fill = fill)
-    imgFixedSize = getFizedSizeBlankPILImage()
-    fixedWidth, fixedHeight = imgFixedSize.size
+
+    # # apply random rotation
+    # randomAngle = getRandomRotationAngle()
+    # img = img.rotate(randomAngle, expand=True)
+
+    # paste the text image onto a fixed size image
+    imgFixedSize = getFizedSizeBlankPILImage(shade=bgShade)
     oldWidth, oldHeight = img.size
     newWidth = int(oldWidth * fixedHeight/oldHeight)
     if newWidth <= fixedWidth:
@@ -134,7 +154,7 @@ def generateRandomLineImage(i, product=None, font=None):
     imgFixedSize.save('images/image{}.png'.format(i))
     labels.write('image{}.png: {}\n'.format(i, product))
 
-
+# generate all the images!
 for i in range(1,numberOfImages+1):
     generateRandomLineImage(i)
     print(i)
