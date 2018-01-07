@@ -16,6 +16,9 @@ labels = open('images/labels.txt','w')
 
 numberOfImages = int(sys.argv[1])
 
+def getRandomRotationAngle():
+    return int(np.random.normal(0,10))
+
 def getRandomBackgroundShade():
     '''
     random shade of gray as the bg, lighter shades have a higher probablility.
@@ -121,9 +124,16 @@ def generateRandomLineImage(i, product=None, font=None):
             generateRandomLineImage(i)
             return
 
+    # create and add text to an image
     img = getPilImageToFitLine(text = product, font = font, shade = bgShade)
     context = ImageDraw.Draw(img)
     context.text(xy = position, text = product, font = font, fill = fill)
+
+    # # apply random rotation
+    # randomAngle = getRandomRotationAngle()
+    # img = img.rotate(randomAngle, expand=True)
+
+    # paste the text image onto a fixed size image
     imgFixedSize = getFizedSizeBlankPILImage(shade=bgShade)
     oldWidth, oldHeight = img.size
     newWidth = int(oldWidth * fixedHeight/oldHeight)
