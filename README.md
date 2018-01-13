@@ -13,11 +13,11 @@
 - [ ] findCountours from openCV (see dzone article)
 
 ### Dataset Generation
-- [ ] Generate images of text
-- [ ] Generate images of text with a given font (color, size, type, bold/italics/underline)
-- [ ] Find an appropriate list of fonts to use
+- [x] Generate images of text
+- [x] Generate images of text with a given font (color, size, type, bold/italics/underline)
+- [x] Find an appropriate list of fonts to use
 - [ ] Find an appropriate list of transformations to make data realistic
-- [ ] Find a corpus
+- [x] Find a corpus (UPC database)
 - [ ] Generate the synthetic dataset using the above steps
 
 ### Design/write the training procedure
@@ -32,3 +32,4 @@
 * [OpenCV](https://opencv.org/releases.html)
 * [Dropbox apply](https://www.dropbox.com/jobs/listing/794772)
 * [Dzone article](https://dzone.com/articles/using-ocr-for-receipt-recognition)
+* [CNN](http://adventuresinmachinelearning.com/convolutional-neural-networks-tutorial-tensorflow/)
