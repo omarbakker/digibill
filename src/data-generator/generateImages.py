@@ -1,9 +1,16 @@
 import cv2
+import utils
 import numpy as np
+import progressbar
 import random, os, sys, shutil
 from PIL import ImageFont, ImageDraw, Image
 
-fixedWidth, fixedHeight = 280, 28
+params = utils.readConf()
+
+fixedWidth, fixedHeight = int(params['width']), int(params['height'])
+labelFile = 'images/labels.txt'
+
+# write these parameters into a config file for thge
 
 fonts = ['fonts/' + font for font in os.listdir('fonts') if font[-3:] == 'ttf']
 
@@ -12,7 +19,7 @@ if os.path.exists('images'):
 os.mkdir('images')
 
 corpus = open('processed-corpus.txt').readlines()
-labels = open('images/labels.txt','w')
+labels = open(labelFile,'w')
 
 numberOfImages = int(sys.argv[1])
 
@@ -155,6 +162,17 @@ def generateRandomLineImage(i, product=None, font=None):
     labels.write('image{}.png: {}\n'.format(i, product))
 
 # generate all the images!
-for i in range(1,numberOfImages+1):
-    generateRandomLineImage(i)
-    print(i)
+
+ # A nice progress bar to show progress
+widgets = [progressbar.Percentage(),\
+            progressbar.Bar(),\
+            'Generating Images: ', progressbar.AnimatedMarker(markers='.oO@* ')]
+
+batchSize = min(numberOfImages, 10000)
+batches = numberOfImages//batchSize
+
+for batch in range(batches):
+    print('Batch {} of {}'.format(batch, batches))
+    bar = progressbar.ProgressBar(widgets=widgets, max_value=batchSize).start()
+    for i in bar(range(1,batchSize+1)):
+        generateRandomLineImage(i + (batch*batchSize))
