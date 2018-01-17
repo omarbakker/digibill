@@ -33,3 +33,6 @@
 * [Dropbox apply](https://www.dropbox.com/jobs/listing/794772)
 * [Dzone article](https://dzone.com/articles/using-ocr-for-receipt-recognition)
 * [CNN](http://adventuresinmachinelearning.com/convolutional-neural-networks-tutorial-tensorflow/)
+* [CNN Batch Norm](https://www.kaggle.com/sarvesh278/cnn-and-batch-normalization-in-tensorflow)
+* [CNN LSTM CTC 2](https://github.com/weinman/cnn_lstm_ctc_ocr/blob/master/src/test.py)
+* [CNN LSTM CTC 1](https://github.com/watsonyanghx/CNN_LSTM_CTC_Tensorflow)
