@@ -1,5 +1,6 @@
 import utils
 import tensorflow as tf
+from utils import prints
 
 learningRate = 1e-4
 epochs = 3 # since we can generate as much data as we need
@@ -8,7 +9,7 @@ lstmSize = 2**9
 pkeepi = 0.5
 pkeepConvi = 0.7
 pkeepLSTMi = 0.8
-seqlen = 100
+seqlen = utils.seqlen
 logdir = './log'
 checkpointdir = './checkpoint'
 restore = True # restore from checkpoint
@@ -25,6 +26,8 @@ x = tf.reshape(x, [-1, imgHeight, imgWidth, channels])
 
 # this will hold the output of the entire network
 y = tf.sparse_placeholder(tf.int32)
+yDense = tf.placeholder(tf.int32, [None, 50])
+yDense = tf.reshape(yDense, [-1, 50])
 
 # learning rate placeholder
 lr = tf.placeholder(tf.float32)
@@ -90,7 +93,7 @@ def compatibleConvNoiseShape(Y):
                             + tf.constant([0,1,1,0])
     return noiseshape
 
-def bilstm(bottom_sequence,sequence_length,rnn_size,scope):
+def bilstm(x_in, sequence_length, rnn_size, scope):
     """Build bidirectional (concatenated output) RNN layer"""
 
     weight_initializer = tf.truncated_normal_initializer(stddev=0.01)
@@ -101,14 +104,15 @@ def bilstm(bottom_sequence,sequence_length,rnn_size,scope):
     cell_fw = DropoutWrapper(cell_fw, input_keep_prob=pkeepLSTMi)
     cell_bw = DropoutWrapper(cell_bw, input_keep_prob=pkeepLSTMi)
 
-    rnn_output,_ = tf.nn.bidirectional_dynamic_rnn(
-        cell_fw, cell_bw, bottom_sequence,
-        # sequence_length=seqlen,
-        time_major=True,
+    rnn_output, state = tf.nn.bidirectional_dynamic_rnn(
+        cell_fw, cell_bw, x_in,
+        sequence_length=[seqlen]*batchSize,
         dtype=tf.float32,
         scope=scope)
-    # return tf.concat(rnn_output,2,name='output_stack')
-    return rnn_output
+
+    outfw, outbw = rnn_output
+    return tf.concat([outfw, outbw], axis=2,name='output_stack')
+    # return rnn_output
 
 def convolutionalLayers(x_in):
     #1 conv -> batchnorm -> relu -> dropout -> pool
@@ -151,77 +155,99 @@ def denseLayers(x_in):
     return dropd2
 
 def recurrentLayers(x_in):
-    x_in = tf.reshape(x_in, [batchSize, -1, seqlen])
-    x_in = tf.transpose(x_in, [0, 2, 1])
-    x_in.set_shape([batchSize, seqlen, 50])
+
+    x_in = tf.reshape(x_in, [batchSize, seqlen, 1])
 
     #6 bilstm -> bilstm -> dense -> relu
     lstm1 = bilstm(x_in, seqlen, lstmSize, "bilstm1")
     lstm2 = bilstm(lstm1, seqlen, lstmSize, "bilstm2")
 
-    # final dense
-    # print(tf.shape(lstm2))
-    lstm2 = tf.reshape(lstm2, [-1, lstmSize])
-    out, _ = dense(lstm2, [lstmSize, nClasses + 1], 'out')
+    # reshaping to apply weights over timesteps
+    lstm2 = tf.reshape(lstm2, [-1, lstmSize * 2])
+    out, _ = dense(lstm2, [lstmSize * 2, nClasses + 1], 'out')
 
     shape = tf.shape(x_in)
     y_ = tf.reshape(relu(out), [shape[0], -1, nClasses + 1])
     y_ = tf.transpose(y_, (1, 0, 2))
-
     return y_
 
 def CTCLoss(y_in, y_):
     #7 Connectionist Temporal Classification
     loss = tf.nn.ctc_loss(labels=y_in, inputs=y_,
-                            sequence_length=seqlen, time_major=True)
+                            sequence_length=[seqlen]*batchSize, time_major=True)
     meanLoss = tf.reduce_mean(loss)
     return meanLoss
+
+def trainSteps(loss):
+    step = tf.Variable(0, trainable=False)
+    return tf.train.AdamOptimizer(lr).minimize(loss, global_step=step)
+
+def evaluationSteps(logits, loss):
+    decoder = tf.nn.ctc_beam_search_decoder
+    decoded, _ = decoder(logits, [seqlen] * batchSize,
+                         merge_repeated=False, top_paths=1)
+    denseDecoded = tf.sparse_tensor_to_dense(decoded[0], default_value=0)
+    denseDecoded = tf.cast(denseDecoded, tf.int32)
+    outputLength = tf.minimum(tf.constant(50), tf.shape(denseDecoded)[1])
+    denseReshaped = tf.Variable(tf.zeros([batchSize, 50], tf.int32))
+    denseReshaped = tf.assign(denseReshaped[:,:outputLength], denseDecoded[:,:outputLength])
+    accuracy = tf.reduce_mean(tf.cast(tf.equal(denseReshaped, yDense), tf.float32))
+    lossSummary = tf.summary.scalar('batch_loss', loss)
+    accuracySummary = tf.summary.scalar('batch_accuracy', accuracy)
+    summaries = tf.summary.merge([lossSummary, accuracySummary])
+    return accuracy, denseDecoded, summaries
 
 def buildModel(x_in, y_in):
     features = convolutionalLayers(x_in)
     sequenceIn = denseLayers(features)
     logits = recurrentLayers(sequenceIn)
     loss = CTCLoss(y_in, logits)
-    trainStep = tf.train.AdamOptimizer(lr).minimize(loss)
-    decoder = tf.nn.ctc_beam_search_decoder
-    decoded, probs = decoder(logits, seqlen, merge_repeated=False)
-    dense_decoded = tf.sparse_tensor_to_dense(decoded[0], default_value=-1)
-    return trainStep, dense_decoded
+    trainStep = trainSteps(loss)
+    # import pdb; pdb.set_trace()
+    accuracy, denseDecoded, summaries = evaluationSteps(logits, loss)
+    return trainStep, denseDecoded, accuracy, summaries
 
-with tf.Session() as sess:
+if __name__ == '__main__':
+    with tf.Session() as sess:
 
-    trainOp, y_out = buildModel(x, y)
-    ema = tf.group(ema)
+        trainOp, y_out, accuracyOp, summariesOp = buildModel(x, y)
+        ema = tf.group(ema)
 
-    sess.run(tf.global_variables_initializer())
-    saver = tf.train.Saver(tf.global_variables(), max_to_keep=100)
-    writer = tf.summary.FileWriter(logdir + '/train', sess.graph)
+        sess.run(tf.global_variables_initializer())
+        saver = tf.train.Saver(tf.global_variables(), max_to_keep=100)
+        writer = tf.summary.FileWriter(logdir + '/train', sess.graph)
 
-    if restore:
-        chkpt = tf.train.latest_checkpoint(checkpointdir)
-        if chkpt:
-            print('restoring checkpoint: {}'.format(chkpt))
-            saver.restore(sess, chkpt)
+        if restore:
+            chkpt = tf.train.latest_checkpoint(checkpointdir)
+            if chkpt:
+                print('restoring checkpoint: {}'.format(chkpt))
+                saver.restore(sess, chkpt)
 
-    print('=========================Training Begins!=========================')
+        prints('Training Begins!')
 
-    for epochNum in range(epochs):
-        print('Starting epoch {}'.format(epochNum+1))
-        batchNum = 0
+        for epochNum in range(epochs):
+            prints('Starting epoch {}'.format(epochNum+1))
+            batchNum = 0
 
-        for batch, labels in utils.batches():
-            batchNum += 1
-            iteration = (batchSize*(epochNum)) + batchNum
+            for batch, labels, denseLabels in utils.batches():
+                batchNum += 1
+                iteration = (batchSize*(epochNum)) + batchNum
 
-            feed = {x: batch, y:labels, lr:learningRate,
-                    pkeep:pkeepi, pkeepConv:pkeepConvi, pkeepLSTM:pkeepLSTMi}
-            feedema = {x: batch, y: labels, tst: False, itera: iteration,
-                        pkeep: 1.0, pkeepConv: 1.0, pkeepLSTM:1.0}
+                feed = {x: batch, y:labels, yDense:denseLabels,
+                        lr:learningRate, pkeep:pkeepi, pkeepConv:pkeepConvi,
+                        pkeepLSTM:pkeepLSTMi, tst:False}
+                feedema = {x: batch, y: labels, tst: False, itera: iteration,
+                            pkeep: 1.0, pkeepConv: 1.0, pkeepLSTM:1.0}
 
-            sess.run(trainOp, feed)
-            sess.run(ema, feedema)
+                _, preds, accuracy, summaries = sess.run([trainOp, y_out,
+                                                          accuracyOp,
+                                                           summariesOp], feed)
+                sess.run(ema, feedema)
+                writer.add_summary(summaries)
 
-            print('Finished batch {}:'.format(batchNum))
+                label = utils.decodedLabel(denseLabels[0]).strip()
+                pred = utils.decodedLabel(preds[0]).strip()
+                print('Batch {}, accuracy: {}, sample: {}  |  {}'.format(batchNum, accuracy*100, label, pred))
 
 
 
