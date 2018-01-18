@@ -210,7 +210,6 @@ if __name__ == '__main__':
         ema = []
 
         trainOp, y_out, accuracyOp, lossOp, summariesOp = buildModel(x, y)
-        ema = tf.group(ema)
 
         sess.run(tf.global_variables_initializer())
         saver = tf.train.Saver(tf.global_variables(), max_to_keep=100)
