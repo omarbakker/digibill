@@ -203,14 +203,13 @@ def buildModel(x_in, y_in):
     logits = recurrentLayers(sequenceIn)
     loss = CTCLoss(y_in, logits)
     trainStep = trainSteps(loss)
-    # import pdb; pdb.set_trace()
     accuracy, denseDecoded, summaries = evaluationSteps(logits, loss)
-    return trainStep, denseDecoded, accuracy, summaries
+    return trainStep, denseDecoded, accuracy, loss, summaries
 
 if __name__ == '__main__':
     with tf.Session() as sess:
 
-        trainOp, y_out, accuracyOp, summariesOp = buildModel(x, y)
+        trainOp, y_out, accuracyOp, lossOp, summariesOp = buildModel(x, y)
         ema = tf.group(ema)
 
         sess.run(tf.global_variables_initializer())
@@ -239,15 +238,16 @@ if __name__ == '__main__':
                 feedema = {x: batch, y: labels, tst: False, itera: iteration,
                             pkeep: 1.0, pkeepConv: 1.0, pkeepLSTM:1.0}
 
-                _, preds, accuracy, summaries = sess.run([trainOp, y_out,
-                                                          accuracyOp,
+                _, preds, accuracy, loss, summaries = sess.run([trainOp, y_out,
+                                                          accuracyOp, lossOp,
                                                            summariesOp], feed)
                 sess.run(ema, feedema)
                 writer.add_summary(summaries)
 
                 label = utils.decodedLabel(denseLabels[0]).strip()
                 pred = utils.decodedLabel(preds[0]).strip()
-                print('Batch {}, accuracy: {}, sample: {}  |  {}'.format(batchNum, accuracy*100, label, pred))
+                print('Batch {:05}, loss {:3.2f}, accuracy: {:3.2f}, sample: {:^20}  |  {:^20}'.
+                        format(batchNum, loss, accuracy*100, label, pred))
 
 
 
