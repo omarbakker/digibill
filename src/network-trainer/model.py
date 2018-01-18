@@ -20,30 +20,6 @@ imgWidth = int(params['width'])
 imgHeight = int(params['height'])
 channels = 1
 
-# this will hold the input to the CNN
-x = tf.placeholder(tf.float32, [None, imgWidth * imgHeight])
-x = tf.reshape(x, [-1, imgHeight, imgWidth, channels])
-
-# this will hold the output of the entire network
-y = tf.sparse_placeholder(tf.int32)
-yDense = tf.placeholder(tf.int32, [None, 50])
-yDense = tf.reshape(yDense, [-1, 50])
-
-# learning rate placeholder
-lr = tf.placeholder(tf.float32)
-
-# test flag for batch normalization
-tst = tf.placeholder(tf.bool)
-itera = tf.placeholder(tf.int32)
-
-# dropout probs
-pkeep = tf.placeholder(tf.float32)
-pkeepConv = tf.placeholder(tf.float32)
-pkeepLSTM = tf.placeholder(tf.float32)
-
-# list to hold moving exponential moving average ops
-ema = []
-
 def relu(x_in):
     return tf.nn.relu(x_in)
 
@@ -208,6 +184,30 @@ def buildModel(x_in, y_in):
 
 if __name__ == '__main__':
     with tf.Session() as sess:
+
+        # this will hold the input to the CNN
+        x = tf.placeholder(tf.float32, [None, imgWidth * imgHeight])
+        x = tf.reshape(x, [-1, imgHeight, imgWidth, channels])
+
+        # this will hold the output of the entire network
+        y = tf.sparse_placeholder(tf.int32)
+        yDense = tf.placeholder(tf.int32, [None, 50])
+        yDense = tf.reshape(yDense, [-1, 50])
+
+        # learning rate placeholder
+        lr = tf.placeholder(tf.float32)
+
+        # test flag for batch normalization
+        tst = tf.placeholder(tf.bool)
+        itera = tf.placeholder(tf.int32)
+
+        # dropout probs
+        pkeep = tf.placeholder(tf.float32)
+        pkeepConv = tf.placeholder(tf.float32)
+        pkeepLSTM = tf.placeholder(tf.float32)
+
+        # list to hold moving exponential moving average ops
+        ema = []
 
         trainOp, y_out, accuracyOp, lossOp, summariesOp = buildModel(x, y)
         ema = tf.group(ema)
